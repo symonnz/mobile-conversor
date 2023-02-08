@@ -2,19 +2,25 @@ import { Picker } from '@react-native-picker/picker';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-export default function FunctionPicker() {
+export default function FunctionPicker(props) {
   const [selectedLanguage, setSelectedLanguage] = useState();
+
+  const arrayCurrency = props.currency;
+
+  let itemCurrency = arrayCurrency.map((value, key) => {
+    return <Picker.Item key={key} value={value.value} label={value.label} />;
+  });
 
   return (
     <View style={styles.container}>
       <Picker
         selectedValue={selectedLanguage}
-        onValueChange={(itemValue, itemIndex) => setSelectedLanguage(itemValue)}
+        onValueChange={(itemValue, itemIndex) => {
+          props.onChange(itemValue);
+          setSelectedLanguage(itemValue);
+        }}
       >
-        <Picker.Item label="Java" value="java" key={0} />
-        <Picker.Item label="JavaScript" value="js" key={1} />
-        <Picker.Item label="Python" value="py" key={2} />
-        <Picker.Item label="Rust" value="rs" key={3} />
+        {itemCurrency}
       </Picker>
     </View>
   );

@@ -1,50 +1,119 @@
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Keyboard
 } from 'react-native';
 
 import FunctionPicker from './src/components/Picker/index';
+import api from './src/services/api';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <View style={styles.converterContainer}>
-        <View style={styles.currencyArea}>
-          <Text style={styles.currencyAreaTitle}>Selecione uma Moeda</Text>
-          <FunctionPicker />
-        </View>
-        <View style={styles.valueArea}>
-          <Text style={styles.valueAreaTitle}>
-            Digite um valor para converter em R$
-          </Text>
-          <TextInput
-            cursorColor={'#4C0677'}
-            keyboardType="numeric"
-            placeholder="Exemplo: 150"
-            style={styles.input}
-          />
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            alert('click');
-          }}
-          style={styles.button}
-        >
-          <Text style={styles.buttonTitle}>Converter</Text>
-        </TouchableOpacity>
+  const [currency, setCurrency] = useState([]);
+  const [currencySelected, setCurrencySelected] = useState(null);
+
+  const [inputValue, setInputValue] = useState(0);
+
+  const [loading, setLoading] = useState(true);
+
+  const [currencyValue, setCurrencyValue] = useState(null);
+  const [convertedValue, setConvertedValue] = useState(0);
+
+  async function converter() {
+    if (currencySelected === null || inputValue === 0) {
+      alert('Selecione uma moeda');
+      return;
+    }
+
+    if (inputValue === 0) {
+      alert('Digite um valor');
+      return;
+    }
+
+    const response = await api.get(`all/${currencySelected}-BRL`);
+    let result = response.data[currencySelected].ask * parseFloat(inputValue);
+
+    setConvertedValue(`R$ ${result.toFixed(2)}`);
+    setCurrencyValue(inputValue);
+
+    Keyboard.dismiss();
+  }
+
+  useEffect(() => {
+    async function loadCurrency() {
+      const response = await api.get('all');
+      let arr = [];
+
+      Object.keys(response.data).map(key => {
+        arr.push({
+          key: key,
+          label: key,
+          value: key
+        });
+      });
+      setCurrency(arr);
+      setLoading(false);
+    }
+
+    loadCurrency();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+        <ActivityIndicator color="#830BD1" size={50} />
       </View>
-      <View style={styles.resultArea}>
-        <Text style={styles.result}>XX USD</Text>
-        <Text style={[styles.result, { color: '#830BD1' }]}> = </Text>
-        <Text style={styles.result}>R$ YY</Text>
+    );
+  } else {
+    return (
+      <View style={styles.container}>
+        <View style={styles.converterContainer}>
+          <View style={styles.currencyArea}>
+            <Text style={styles.currencyAreaTitle}>Selecione uma Moeda</Text>
+            <FunctionPicker
+              currency={currency}
+              onChange={currency => {
+                setCurrencySelected(currency);
+              }}
+            />
+          </View>
+          <View style={styles.valueArea}>
+            <Text style={styles.valueAreaTitle}>
+              Digite um valor para converter em R$
+            </Text>
+            <TextInput
+              cursorColor={'#4C0677'}
+              keyboardType="numeric"
+              placeholder="Exemplo: 150"
+              style={styles.input}
+              onChangeText={value => {
+                setInputValue(value);
+              }}
+            />
+          </View>
+          <TouchableOpacity onPress={converter} style={styles.button}>
+            <Text style={styles.buttonTitle}>Converter</Text>
+          </TouchableOpacity>
+        </View>
+
+        {convertedValue !== 0 && (
+          <View style={styles.resultArea}>
+            <Text style={styles.result}>
+              {currencyValue} {currencySelected}
+            </Text>
+            <Text style={[styles.result, { color: '#830BD1' }]}> = </Text>
+            <Text style={styles.result}>{convertedValue}</Text>
+          </View>
+        )}
+        <StatusBar style="auto" />
       </View>
-      <StatusBar style="auto" />
-    </View>
-  );
+    );
+  }
 }
 
 // F5F4F4 cinza
